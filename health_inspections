@@ -1,0 +1,86 @@
+CREATE DATABASE health_inspections;
+USE health_inspections;
+
+CREATE TABLE Restaurant (
+    restaurant_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    address VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(50),
+    zipcode VARCHAR(20),
+    phone VARCHAR(50)
+);
+
+CREATE TABLE Inspection (
+    inspection_id INT AUTO_INCREMENT PRIMARY KEY,
+    restaurant_id INT NOT NULL,
+    inspection_date DATE NOT NULL,
+    inspection_type VARCHAR(100),
+    score INT,
+    inspector_name VARCHAR(255),
+    FOREIGN KEY (restaurant_id) REFERENCES Restaurant(restaurant_id)
+);
+
+CREATE TABLE Violation (
+    violation_id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50),
+    description TEXT
+);
+
+CREATE TABLE InspectionViolation (
+    inspection_id INT NOT NULL,
+    violation_id INT NOT NULL,
+    severity VARCHAR(50),
+    comments TEXT,
+    PRIMARY KEY (inspection_id, violation_id),
+    FOREIGN KEY (inspection_id) REFERENCES Inspection(inspection_id),
+    FOREIGN KEY (violation_id) REFERENCES Violation(violation_id)
+);
+
+CREATE TABLE RawData (
+    restaurant_name VARCHAR(255),
+    address VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(50),
+    zipcode VARCHAR(20),
+    inspection_date DATE,
+    inspection_type VARCHAR(100),
+    score INT,
+    violation_code VARCHAR(50),
+    violation_description TEXT,
+    severity VARCHAR(50),
+    comments TEXT
+);
+LOAD DATA INFILE 'C:/Users/sof07/Downloads/Health_Inspection_Scores.csv'
+
+INTO TABLE RawData
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+INSERT INTO Restaurant (name, address, city, state, zipcode)
+SELECT DISTINCT restaurant_name, address, city, state, zipcode
+FROM RawData;
+
+INSERT INTO Inspection (restaurant_id, inspection_date, inspection_type, score)
+SELECT r.restaurant_id, rd.inspection_date, rd.inspection_type, rd.score
+FROM RawData rd
+JOIN Restaurant r
+    ON rd.restaurant_name = r.name
+    AND rd.address = r.address;
+
+INSERT INTO Violation (code, description)
+SELECT DISTINCT violation_code, violation_description
+FROM RawData
+WHERE violation_code IS NOT NULL AND violation_code <> '';
+
+INSERT INTO InspectionViolation (inspection_id, violation_id, severity, comments)
+SELECT i.inspection_id, v.violation_id, rd.severity, rd.comments
+FROM RawData rd
+JOIN Restaurant r
+    ON rd.restaurant_name = r.name AND rd.address = r.address
+JOIN Inspection i
+    ON i.restaurant_id = r.restaurant_id
+    AND i.inspection_date = rd.inspection_date
+JOIN Violation v
+    ON v.code = rd.violation_code;
