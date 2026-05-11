@@ -151,6 +151,28 @@ JOIN Inspection i ON r.restaurant_id = i.restaurant_id
 LEFT JOIN InspectionViolation iv ON i.inspection_id = iv.inspection_id
 LEFT JOIN Violation v ON iv.violation_id = v.violation_id;
 
-SELECT *
-FROM RestaurantInspectionSummary;
 
+-- For view 
+USE health_inspections;
+
+CREATE OR REPLACE VIEW RestaurantInspectionSummary AS
+SELECT 
+    r.name AS restaurant_name,
+    r.address,
+    r.city,
+    r.zipcode,
+    i.inspection_date,
+    i.inspection_type,
+    i.score,
+    v.code AS violation_code,
+    v.description AS violation_description,
+    iv.severity,
+    iv.comments
+FROM Restaurant r
+JOIN Inspection i ON r.restaurant_id = i.restaurant_id
+LEFT JOIN InspectionViolation iv ON i.inspection_id = iv.inspection_id
+LEFT JOIN Violation v ON iv.violation_id = v.violation_id;
+
+SELECT *
+FROM RestaurantInspectionSummary
+LIMIT 20;
