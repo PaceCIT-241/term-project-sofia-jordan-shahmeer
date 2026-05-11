@@ -1,5 +1,3 @@
-CREATE DATABASE health_inspections;
-
 USE health_inspections;
 
 SHOW DATABASES;
